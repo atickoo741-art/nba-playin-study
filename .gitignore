@@ -1,0 +1,9 @@
+.venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+data/external/summaries/
+data/external/bref/
+
+# Retrieved on first run and cached; re-downloaded by run_all.py
+data/external/

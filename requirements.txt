@@ -1,0 +1,11 @@
+# Minimum versions the study was developed against (Python 3.9+).
+# Exact pinned versions of the run that produced the committed results are in
+# requirements-lock.txt.
+numpy>=1.24,<2
+pandas>=2.0
+scipy>=1.10
+openpyxl>=3.1
+matplotlib>=3.7
+markdown>=3.4
+lxml>=4.9
+pytest>=7.0

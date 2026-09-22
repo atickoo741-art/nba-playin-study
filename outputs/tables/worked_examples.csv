@@ -1,0 +1,32 @@
+page,quantity,value_on_the_page,recomputed,agrees,note
+1,"Boston's first five margins, 2024-25",,"[23, 20, 6, 11, -3]",,"dates 2024-10-22, 2024-10-24, 2024-10-26, 2024-10-28, 2024-10-30"
+1,average scoring margin,11.4,11.4,True,
+2,games inside the four-team subset,22.0,22,True,
+2,BOS games / total margin,,"11 games, +89 margin",,
+2,BOS restricted rating,6.105769230769236,6.105769230769228,True,"restricted mini-league rating, not NBA SRS"
+2,CLE games / total margin,,"12 games, +54 margin",,
+2,CLE restricted rating,3.3750000000000053,3.374999999999998,True,"restricted mini-league rating, not NBA SRS"
+2,NY games / total margin,,"11 games, -106 margin",,
+2,NY restricted rating,-6.894230769230775,-6.8942307692307665,True,"restricted mini-league rating, not NBA SRS"
+2,IND games / total margin,,"10 games, -37 margin",,
+2,IND restricted rating,-2.5865384615384617,-2.586538461538461,True,"restricted mini-league rating, not NBA SRS"
+2,ratings sum to zero,0.0,-8.881784197001252e-16,True,
+3,beta (3-season window ending 2023-24),0.11289078930596157,0.11289078930596157,True,
+3,h,0.22249238011772254,0.2224923801177229,True,
+3,P(Golden State beats Memphis at home),0.5207427031776123,0.5207427031776126,True,
+4,"P(seed 7 = GS, seed 8 = MEM)",0.3545379556449871,0.35453795564498725,True,
+4,"P(seed 7 = GS, seed 8 = SAC)",0.10245172318241284,0.10245172318241282,True,
+4,"P(seed 7 = GS, seed 8 = DAL)",0.06375302435021239,0.06375302435021254,True,
+4,"P(seed 7 = MEM, seed 8 = GS)",0.31143522500834026,0.31143522500834014,True,
+4,"P(seed 7 = MEM, seed 8 = SAC)",0.10326529789028309,0.10326529789028291,True,
+4,"P(seed 7 = MEM, seed 8 = DAL)",0.06455677392376435,0.06455677392376433,True,
+4,six ordered outcomes sum to 1,1.0,1.0,True,
+5,P(GS qualifies),0.8321779281859525,0.8321779281859527,True,
+5,P(MEM qualifies),0.8337952524673748,0.8337952524673746,True,
+5,P(SAC qualifies),0.20571702107269593,0.20571702107269574,True,
+5,P(DAL qualifies),0.12830979827397676,0.12830979827397687,True,
+6,the four qualification probabilities sum to 2,2.0,2.0,True,
+8,"P(Golden State beats Memphis, neutral court)",0.4651879350133163,0.46518793501331657,True,
+8,constant-p best-of-seven,0.4242166807737399,0.4242166807737406,True,equals the backward recursion with a constant p
+8,backward recursion agrees with the binomial sum,0.4242166807737406,0.4242166807737406,True,
+9,series with home court: Golden State hosts Memphis,,0.44185084985370665,,"venue sequence H,H,A,A,H,A,H"

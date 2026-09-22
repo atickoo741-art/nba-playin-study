@@ -1,0 +1,3079 @@
+<!doctype html><html><head><meta charset='utf-8'><title>NBA play-in study</title><style>
+    @page { size: A4; margin: 18mm 16mm; }
+    body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+           font-size: 10.5pt; line-height: 1.5; color: #16160f; max-width: 52em;
+           margin: 0 auto; }
+    h1 { font-size: 20pt; margin-top: 0; }
+    h2 { font-size: 14pt; border-bottom: 1px solid #d9d8d4; padding-bottom: 4px;
+         margin-top: 26px; }
+    h3 { font-size: 11.5pt; margin-top: 18px; }
+    table { border-collapse: collapse; width: 100%; font-size: 9pt;
+            margin: 10px 0 16px; }
+    th, td { border: 1px solid #d9d8d4; padding: 4px 7px; text-align: right; }
+    th { background: #f2f1ec; text-align: left; }
+    td:first-child, th:first-child { text-align: left; }
+    code { background: #f2f1ec; padding: 1px 4px; border-radius: 3px;
+           font-size: 9.2pt; }
+    pre { background: #f8f7f3; border: 1px solid #e5e4de; padding: 8px 10px;
+          overflow-x: auto; font-size: 9pt; }
+    img { max-width: 100%; margin: 8px 0; }
+    blockquote { border-left: 3px solid #eb6834; margin: 12px 0; padding: 2px 14px;
+                 color: #3a3a33; }
+    </style></head><body><h1 id="does-the-play-in-tournament-help-the-best-team-win-the-title">Does the play-in tournament help the best team win the title?</h1>
+<p>A model-based counterfactual over five NBA seasons, 2020-21 to 2024-25</p>
+<p><em>Generated 21 September 2026 from <code>NBA_PlayIn_Whiteboard_Data.xlsx</code>.
+Every figure in this report is produced by <code>python run_all.py</code>; nothing is
+typed in by hand.</em></p>
+<hr />
+<h2 id="1-summary">1. Summary</h2>
+<p>Holding each season's standings and team ratings fixed, the play-in tournament
+changed the highest-rated team's probability of winning the championship by
+<strong>+0.29 percentage points on average over the five seasons</strong>
+(simulated: +0.28 pp, Monte Carlo standard error
+0.008 pp). The effect was positive in 2 of the five seasons
+and negative in 3. Every season's effect is smaller than one
+percentage point except 2024-25, at +2.08 pp.</p>
+<p>The sign is not a property of the play-in format. It depends on one thing:
+whether the play-in tends to put a <strong>stronger or weaker</strong> team into the seed
+that the best team has to beat.</p>
+<ul>
+<li>In <strong>2024-25</strong> the strongest team, OKC, finished first in the West and so
+  faced the eighth seed. Under the old format that was Memphis, rated
+  4.79, the strongest of the four play-in teams. Under the play-in
+  format the eighth seed is Memphis only
+  35.5% of the time, and its expected rating
+  falls to 2.83. OKC's draw gets easier, and its title probability
+  rises +2.08 pp.</li>
+<li>In <strong>2021-22</strong> the strongest team, Boston, finished second in the East and so
+  faced the seventh seed. Under the old format that was Brooklyn, the weaker of
+  the two; the play-in replaces it with the winner of Brooklyn against a
+  better-rated Cleveland. Boston's draw gets harder, and its title probability
+  falls 0.71 pp.</li>
+</ul>
+<p>Two other model-derived quantities are reported alongside: the expected rating
+of the champion and the expected rating of the sixteen-team playoff field. Both
+move by small amounts, and like the headline number they move in different
+directions in different seasons.</p>
+<p><strong>This is a counterfactual inside a model, not the causal effect of the
+policy.</strong> Standings, ratings and the game model are held fixed, so nothing
+about incentives, resting, injuries or roster decisions is represented. See
+section 12.</p>
+<p><img alt="Change in title probability by season" src="../outputs/figures/fig1_difference_by_season.png" /></p>
+<hr />
+<h2 id="2-research-question-and-scope">2. Research question and scope</h2>
+<blockquote>
+<p>Holding regular-season standings and estimated team strengths fixed, does the
+NBA play-in tournament increase the probability that the highest-rated team
+wins the championship?</p>
+</blockquote>
+<p>Five seasons are studied: 2020-21, 2021-22, 2022-23, 2023-24, 2024-25. For
+each one, the same standings, the same ratings and the same game-probability
+model are put through two tournaments:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Old qualification format</th>
+<th>Play-in format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Seeds 1-6</td>
+<td>positions 1-6 qualify</td>
+<td>positions 1-6 qualify</td>
+</tr>
+<tr>
+<td>Seed 7</td>
+<td>position 7</td>
+<td>winner of 7 hosts 8</td>
+</tr>
+<tr>
+<td>Seed 8</td>
+<td>position 8</td>
+<td>winner of (7/8 loser hosts 9/10 winner)</td>
+</tr>
+<tr>
+<td>Teams involved</td>
+<td>8 per conference</td>
+<td>10 per conference</td>
+</tr>
+</tbody>
+</table>
+<p>"Strongest" always means the highest full-season SRS rating computed <strong>before</strong>
+that season's postseason. The actual champion is never used to define it.</p>
+<h3 id="what-the-comparison-can-and-cannot-show">What the comparison can and cannot show</h3>
+<p>It isolates one channel: the bracket. Because the standings and ratings are
+frozen, the comparison answers "given these teams and these strengths, what
+does the extra round do to the best team's chances?" It does not answer "what
+happened to the NBA because the play-in exists?", since a real policy also
+changes how teams behave during the season.</p>
+<hr />
+<h2 id="3-data-and-audit">3. Data and audit</h2>
+<h3 id="sources">Sources</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Use</th>
+<th>Retrieved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NBA_PlayIn_Whiteboard_Data.xlsx</code></td>
+<td>the study's input: 9,519 regular-season games 2017-18 to 2024-25, 150 team-seasons, published reference values</td>
+<td>supplied</td>
+</tr>
+<tr>
+<td><a href="https://raw.githubusercontent.com/sportsdataverse/hoopR-nba-data/main/nba/schedules/nba_schedule_master.csv">sportsdataverse/hoopR-nba-data schedule archive</a></td>
+<td>independent rebuild of the game table</td>
+<td>2026-09-21</td>
+</tr>
+<tr>
+<td><a href="https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings?season=2025&amp;type=0&amp;level=2">ESPN standings API</a></td>
+<td>win-loss records and scoring totals, five seasons</td>
+<td>2026-09-21</td>
+</tr>
+<tr>
+<td><a href="https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=401705741">ESPN game summary API</a></td>
+<td>box scores for 21 individual games under investigation</td>
+<td>2026-09-21</td>
+</tr>
+<tr>
+<td><a href="https://www.basketball-reference.com/leagues/NBA_2025.html">Basketball-Reference season totals</a></td>
+<td>third source for the 12 disputed scoring totals</td>
+<td>2026-09-21</td>
+</tr>
+<tr>
+<td><a href="https://www.nba.com/news/nba-play-in-tournament">NBA.com play-in rules</a></td>
+<td>format verification</td>
+<td>2026-09-21</td>
+</tr>
+</tbody>
+</table>
+<h3 id="audit-findings">Audit findings</h3>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Status</th>
+<th>What was found</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Game IDs unique</td>
+<td>pass</td>
+<td>9519 games, 0 duplicated IDs</td>
+</tr>
+<tr>
+<td>Games per season</td>
+<td>pass</td>
+<td>counts 2018:1230, 2019:1230, 2020:1059, 2021:1080, 2022:1230, 2023:1230, 2024:1230, 2025:1230; all match the published schedule</td>
+</tr>
+<tr>
+<td>No repeated date/home/away pairs</td>
+<td>pass</td>
+<td>0 repeated matchup-days</td>
+</tr>
+<tr>
+<td>One team plays at most one game per day</td>
+<td>known issue</td>
+<td>1 team-day(s) hold two games: game IDs 401161536, 401161543. Game 401161536 (Golden State 115, Phoenix 99) is dated 2020-03-01 in the archive but was played on 2020-02-29 (confirmed against Basketball-Reference box-score index). The score is correct; only the date is off by one, and it affects nothing but the day on which that 2019-20 result enters the running ratings.</td>
+</tr>
+<tr>
+<td>Team identities</td>
+<td>pass</td>
+<td>30 distinct team codes: ATL BKN BOS CHA CHI CLE DAL DEN DET GS HOU IND LAC LAL MEM MIA MIL MIN NO NY OKC ORL PHI PHX POR SA SAC TOR UTAH WSH</td>
+</tr>
+<tr>
+<td>30 teams every season</td>
+<td>pass</td>
+<td>min 30, max 30</td>
+</tr>
+<tr>
+<td>Season labels match dates</td>
+<td>pass</td>
+<td>2018: 2017-10-17..2018-04-11; 2019: 2018-10-16..2019-04-10; 2020: 2019-10-22..2020-08-14; 2021: 2020-12-22..2021-05-16; 2022: 2021-10-19..2022-04-10; 2023: 2022-10-18..2023-04-09; 2024: 2023-10-24..2024-04-14; 2025: 2024-10-22..2025-04-13</td>
+</tr>
+<tr>
+<td>Cup championship games excluded, other Cup games kept</td>
+<td>pass</td>
+<td>both Cup finals absent (2023 In-Season Tournament final (LAL 123, IND 109); 2024 Cup final (MIL 97, OKC 81)); 132 of 132 other Cup games retained, because they do count toward the regular-season standings</td>
+</tr>
+<tr>
+<td>No All-Star or postseason games in the regular-season table</td>
+<td>pass</td>
+<td>0 non-regular-season game IDs found in the sheet</td>
+</tr>
+<tr>
+<td>Workbook game table reproduced from the hoopR archive</td>
+<td>pass</td>
+<td>9519 games matched; 0 only in the workbook, 0 only in the archive, 0 score differences, 0 date differences, 0 neutral-flag differences</td>
+</tr>
+<tr>
+<td>2020 bubble games treated as neutral</td>
+<td>pass</td>
+<td>88 bubble games, 88 neutral in the model; source flag marked 0 of them neutral</td>
+</tr>
+<tr>
+<td>Other neutral-site games</td>
+<td>info</td>
+<td>17 non-bubble neutral games at 7 venues (see audit_neutral_sites.csv)</td>
+</tr>
+<tr>
+<td>Win-loss records match ESPN standings</td>
+<td>pass</td>
+<td>150 team-seasons checked against a freshly retrieved standings feed; 0 mismatches</td>
+</tr>
+<tr>
+<td>Scoring totals: game log vs standings feed</td>
+<td>known issue</td>
+<td>12 of 150 team-seasons differ, by 1-3 points; the workbook reports the same 12</td>
+</tr>
+<tr>
+<td>Third source (Basketball-Reference) on the 12 scoring gaps</td>
+<td>resolved</td>
+<td>12 of 12 team-season totals match the summed game scores exactly, so the ESPN standings aggregate is the outlier and no game score needs correcting</td>
+</tr>
+<tr>
+<td>Scoring discrepancies traced to individual games</td>
+<td>resolved</td>
+<td>21 candidate games checked against ESPN box scores; 0 could not be checked</td>
+</tr>
+<tr>
+<td>Regular-season positions 1-15 restored</td>
+<td>pass</td>
+<td>ranks 1-15 complete in all 10 conference-seasons; 40 positions 7-10 confirmed from opening play-in matchups; 17 team-seasons where the stored ESPN playoff seed differs from the regular-season position</td>
+</tr>
+<tr>
+<td>No future information in the pregame features</td>
+<td>pass</td>
+<td>7048 published feature rows; prior-game counts recomputed from the game table: 0 disagreements, 0 rows below the 20-game threshold</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-twelve-scoring-discrepancies-resolved">The twelve scoring discrepancies, resolved</h3>
+<p>Twelve of 150 team-season scoring totals in the ESPN standings feed differ from
+the sum of that team's game scores, by one to three points. They are not
+scattered: they pair up. In 2020-21, Indiana's points-against is two higher in
+the game log while Dallas's points-for is two higher by the same amount, which
+can only come from a game between those two teams. That logic narrows the whole
+set of twelve to 21 candidate games.</p>
+<p>All 21 candidate box scores were pulled from ESPN's game
+summary endpoint: <strong>every one agrees with the game table</strong>. Basketball-Reference
+was then checked as a third, fully independent source: all
+12 team-season totals match the summed game scores exactly, not the
+standings feed.</p>
+<blockquote>
+<p><strong>Conclusion:</strong> the game scores are right and the ESPN standings aggregate is
+the outlier. No score is corrected, no game is dropped, and the analysis uses
+the game-level scores. Section 11 shows what would happen if the standings
+totals were used instead: at most
+0.020 pp on any season's result.</p>
+</blockquote>
+<h3 id="one-archive-defect-found">One archive defect found</h3>
+<p>Game <code>401161536</code> (Golden State 115, Phoenix 99) is dated 2020-03-01 in the
+archive, which puts two Golden State games on the same day. Basketball-Reference's
+box-score index shows the game was played 2020-02-29. The score is right; the
+date is one day late. It sits in 2019-20, a training season only. Moving it to
+its true date changes no season's result by more than
+0.042 thousandths of a percentage point.</p>
+<h3 id="exclusions-and-venue-handling">Exclusions and venue handling</h3>
+<ul>
+<li>Only completed regular-season games between the 30 NBA teams are kept.</li>
+<li>The two in-season Cup <strong>championship</strong> games are removed, because they do not
+  count in the standings. Every other Cup game is kept, because it does.</li>
+<li>No All-Star or postseason game appears in the regular-season table.</li>
+<li>The 88 games played in the 2020 Orlando bubble are treated as neutral. The
+  source feed marks none of them neutral, which is wrong; the override is the
+  workbook's and it is correct.</li>
+<li>Positions 7-10 are recovered from the wording of the opening play-in matchups
+  ("7th Place vs 8th Place"), not from the playoff seeds, which the play-in
+  itself changes. In 17 team-seasons the stored playoff seed differs from the
+  regular-season position, so this matters.</li>
+</ul>
+<hr />
+<h2 id="4-ratings">4. Ratings</h2>
+<h3 id="full-season-srs">Full-season SRS</h3>
+<p>For every team <em>i</em>, with mbar_i its average scoring margin, n_i its number of
+games and O_i the list of its opponents (one entry per game played):</p>
+<pre><code>R_i = mbar_i + (1/n_i) * sum over j in O_i of R_j,      sum over i of R_i = 0
+</code></pre>
+<p>Multiplying through by n_i turns this into a linear system,
+<code>(diag(N) - C) R = m</code>, where <code>C[i,j]</code> counts the games between i and j and
+<code>m_i</code> is team i's total scoring margin. It is solved with the sum-to-zero
+constraint. The rating is a team's scoring margin adjusted for how strong its
+opponents were. A repeated opponent is counted once per game, which is what
+makes the adjustment right for unbalanced schedules.</p>
+<p>These ratings reproduce the workbook's to within 1e-13, and they satisfy their
+own defining equation to within 1e-7 (tested in <code>tests/test_ratings.py</code>).</p>
+<h3 id="pregame-ratings">Pregame ratings</h3>
+<p>The same system is re-solved once per game date using only games on <strong>strictly
+earlier</strong> dates, so a game can never help predict itself. A game enters the
+training set only if both teams already have 20 games
+that season, which keeps ratings built on five-game samples out of the fit. Of
+9,519 games, 7,048 pass that filter. Recomputed independently here, all 7,048
+match the workbook's published features exactly.</p>
+<p>That threshold is a real choice with a cost: it throws away roughly the first
+six weeks of every season. It is kept because early ratings are extremely
+noisy - before 20 games a team's SRS still moves by several points per game -
+and because it was specified before any result was looked at.</p>
+<hr />
+<h2 id="5-the-game-model">5. The game model</h2>
+<pre><code>P(A beats B) = 1 / (1 + exp(-(beta * (R_A - R_B) + h * H)))
+H = +1 if A is at home, -1 if A is away, 0 at a neutral venue
+</code></pre>
+<p>Fitted by maximum likelihood on completed games from earlier seasons only, with
+<code>beta &gt;= 0</code> and no separate intercept, so two equally rated teams at a neutral
+venue are a coin flip by construction. The prespecified training window is the
+<strong>three completed seasons before</strong> the season being studied; one- and two-season
+windows are reported in section 11 as checks, never as a choice.</p>
+<table>
+<thead>
+<tr>
+<th>Season</th>
+<th>Highest-rated team</th>
+<th>SRS</th>
+<th>Position</th>
+<th>Conference</th>
+<th>beta</th>
+<th>h</th>
+<th>Training games</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2020-21</td>
+<td>UTAH</td>
+<td>8.96</td>
+<td>1</td>
+<td>Western</td>
+<td>0.1148</td>
+<td>0.3378</td>
+<td>2,593</td>
+</tr>
+<tr>
+<td>2021-22</td>
+<td>BOS</td>
+<td>7.02</td>
+<td>2</td>
+<td>Eastern</td>
+<td>0.1102</td>
+<td>0.2918</td>
+<td>2,441</td>
+</tr>
+<tr>
+<td>2022-23</td>
+<td>BOS</td>
+<td>6.38</td>
+<td>2</td>
+<td>Eastern</td>
+<td>0.1077</td>
+<td>0.2000</td>
+<td>2,441</td>
+</tr>
+<tr>
+<td>2023-24</td>
+<td>BOS</td>
+<td>10.74</td>
+<td>1</td>
+<td>Eastern</td>
+<td>0.1114</td>
+<td>0.2439</td>
+<td>2,613</td>
+</tr>
+<tr>
+<td>2024-25</td>
+<td>OKC</td>
+<td>12.70</td>
+<td>1</td>
+<td>Western</td>
+<td>0.1129</td>
+<td>0.2225</td>
+<td>2,767</td>
+</tr>
+</tbody>
+</table>
+<p><code>beta</code> is close to 0.111 in every season: one point of SRS is
+worth about 0.111 in log-odds, so a five-point rating edge
+makes a team roughly 64% to win a
+neutral game. <code>h</code> between 0.20 and 0.34 means home
+court is worth between 1.9 and
+2.9 points of rating - in the same range as the
+familiar "home court is worth about two or three points" rule.</p>
+<p>No model was chosen because it produced a preferred tournament answer. The
+window was fixed in advance, and the alternatives are reported whatever they
+show.</p>
+<hr />
+<h2 id="6-the-two-tournaments">6. The two tournaments</h2>
+<h3 id="play-in-exactly-as-the-league-runs-it">Play-in, exactly as the league runs it</h3>
+<p>Position 7 hosts position 8; the winner is <strong>seed 7</strong>. Position 9 hosts position
+10; the loser is eliminated. The loser of 7/8 hosts the winner of 9/10; that
+winner is <strong>seed 8</strong>. (Verified against nba.com.)</p>
+<p>This produces six possible ordered (seed 7, seed 8) outcomes per conference,
+and they are <strong>dependent</strong>: whoever wins the 7/8 game is seed 7 and cannot also
+be seed 8. The study carries the joint distribution over all six, never two
+independent marginals. <code>tests/test_structure.py</code> contains a test that fails if
+anyone replaces the joint with a product.</p>
+<h3 id="bracket-and-venues">Bracket and venues</h3>
+<p>The bracket is fixed and there is no reseeding: 1-8, 4-5, 2-7, 3-6; the winners
+of 1/8 and 4/5 meet, as do the winners of 2/7 and 3/6. The better seed hosts
+game 1 of every conference series, in the 2-2-1-1-1 pattern
+<code>H, H, A, A, H, A, H</code>.</p>
+<h3 id="finals-home-court">Finals home court</h3>
+<p>The published NBA rule for two teams in opposite conferences is applied in
+order: better regular-season winning percentage; then head-to-head record; then
+record against the opposite conference. Across the five seasons there are
+24 tied pairs among teams that could reach the Finals, and the chain
+resolves <strong>all of them</strong> - 12 on
+head-to-head and 12
+on opposite-conference record. None is left unresolved, so the workbook's
+50/50 pilot assumption is not needed anywhere.</p>
+<p>Section 11 shows that this matters even less than it sounds: the highest-rated
+team is never itself in a tied pair, so its title probability is
+<strong>bit-for-bit identical</strong> under all four hosting rules tried.</p>
+<hr />
+<h2 id="7-exact-calculation">7. Exact calculation</h2>
+<p>Nothing in this section is simulated.</p>
+<p><strong>Series.</strong> With <code>p_k</code> the probability the tracked team wins game k, and
+F(w, l) the probability it wins the series from w wins and l losses:</p>
+<pre><code>F(w, l) = p_{w+l} * F(w+1, l) + (1 - p_{w+l}) * F(w, l+1)
+F(4, l) = 1,   F(w, 4) = 0
+</code></pre>
+<p>This is exact for venue-dependent probabilities, which a binomial formula is
+not: the games in a series are not all played under the same conditions.</p>
+<p><strong>Bracket.</strong> Each round's output is a probability distribution over which team
+occupies the slot. Two slot distributions are combined by summing, over all
+pairs, the probability that they meet times the probability that each wins.
+After three rounds the conference winner's distribution remains; the two
+conferences are then crossed, pair by pair, with the Finals hosting rule.</p>
+<p><strong>Play-in.</strong> Six ordered seed states per conference are enumerated, and the
+36 combined configurations are crossed. The title distribution is the
+weighted average.</p>
+<p>Every distribution is checked to sum to one, and the four play-in teams'
+qualification probabilities are checked to sum to exactly two per conference.</p>
+<hr />
+<h2 id="8-monte-carlo-design">8. Monte Carlo design</h2>
+<p>The simulator plays games, not tournaments drawn from the answer. It draws
+uniforms, compares them with game probabilities, counts series wins, and
+carries the winners forward through exactly the same bracket rules - so
+agreement with section 7 is evidence that both implementations are right.</p>
+<ul>
+<li><strong>500,000 complete tournaments per format per
+  season</strong> (5,000,000 in total), configurable
+  with <code>--replicates</code>.</li>
+<li>Seed 20250921. Replicates are drawn in fixed blocks of
+  20,000, each block seeded from (seed, season, block number), so
+  the same seed reproduces the same run on any machine and asking for more
+  replicates extends the run instead of changing it.</li>
+<li><strong>Common random numbers.</strong> Both formats use the same draws for the same
+  bracket position, so the two runs are paired. The reported standard error for
+  the difference is the standard error of the paired differences,
+  <code>sd(d) / sqrt(M)</code>, which is the correct one for this design. The
+  independent-proportions standard error is also reported: it is about
+  6 times
+  larger, which is the value of pairing.</li>
+<li>A best-of-seven is simulated by playing all seven games and awarding the
+  series to whoever wins at least four. That is exactly equivalent to stopping
+  at four wins, because the winner of the first four games is always the winner
+  of all seven.</li>
+</ul>
+<h3 id="simulation-against-exact-calculation">Simulation against exact calculation</h3>
+<p>Across all 30 teams, five seasons and both formats (300 comparisons), the
+largest gap between simulated share and exact probability is
+0.00186 and the mean gap is 0.000132. The largest gap in units
+of its own Monte Carlo standard error is
+3.13, which is what 300 independent
+comparisons should produce. No seed was changed to make these agree; the seed
+was fixed before the first run.</p>
+<p><img alt="Exact against simulated" src="../outputs/figures/fig2_exact_vs_simulated.png" /></p>
+<p><strong>Monte Carlo error is computational uncertainty only.</strong> It says how precisely
+the simulation reproduces the model's own answer. It says nothing about whether
+the ratings are right, whether the logistic model is the right model, or what
+the true effect of the policy is.</p>
+<hr />
+<h2 id="9-validation">9. Validation</h2>
+<p>Held out means held out: for a season's test set, that season's games never
+enter the fit.</p>
+<table>
+<thead>
+<tr>
+<th>Test set</th>
+<th>Games</th>
+<th>Brier, model</th>
+<th>Brier, home-rate baseline</th>
+<th>Log loss, model</th>
+<th>Log loss, baseline</th>
+<th>Accuracy, model</th>
+<th>Accuracy, baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Regular season (pregame ratings)</td>
+<td>4455</td>
+<td>0.2189</td>
+<td>0.2482</td>
+<td>0.6268</td>
+<td>0.6896</td>
+<td>0.643</td>
+<td>0.545</td>
+</tr>
+<tr>
+<td>Play-in games (frozen ratings)</td>
+<td>30</td>
+<td>0.2218</td>
+<td>0.2323</td>
+<td>0.6352</td>
+<td>0.6576</td>
+<td>0.667</td>
+<td>0.667</td>
+</tr>
+<tr>
+<td>Playoffs (frozen ratings)</td>
+<td>422</td>
+<td>0.2304</td>
+<td>0.2441</td>
+<td>0.6530</td>
+<td>0.6813</td>
+<td>0.637</td>
+<td>0.583</td>
+</tr>
+</tbody>
+</table>
+<p>The model beats the naive home-win-rate baseline on Brier score and log loss on
+all three test sets, and by a wider margin in the regular season, where rating
+differences are largest. Its accuracy advantage over the baseline is about
+10 percentage
+points in the regular season and
+5 in the
+playoffs. The playoff margin is thinner, which is expected: playoff teams are
+closer in strength than a random pair of NBA teams.</p>
+<p>The baseline is a real baseline, not a straw man - it is fitted on the same
+training window and predicts the historical home-win rate
+(0.555 on average) for every hosted game.</p>
+<h3 id="calibration">Calibration</h3>
+<p><img alt="Calibration" src="../outputs/figures/fig3_calibration.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Predicted from</th>
+<th>to</th>
+<th>Games</th>
+<th>Mean predicted</th>
+<th>Observed home-win rate</th>
+<th>Standard error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.0000</td>
+<td>0.3500</td>
+<td>581</td>
+<td>0.2704</td>
+<td>0.2719</td>
+<td>0.0185</td>
+</tr>
+<tr>
+<td>0.3500</td>
+<td>0.4500</td>
+<td>622</td>
+<td>0.4020</td>
+<td>0.3730</td>
+<td>0.0194</td>
+</tr>
+<tr>
+<td>0.4500</td>
+<td>0.5000</td>
+<td>403</td>
+<td>0.4753</td>
+<td>0.4814</td>
+<td>0.0249</td>
+</tr>
+<tr>
+<td>0.5000</td>
+<td>0.5500</td>
+<td>512</td>
+<td>0.5255</td>
+<td>0.5137</td>
+<td>0.0221</td>
+</tr>
+<tr>
+<td>0.5500</td>
+<td>0.6500</td>
+<td>990</td>
+<td>0.5999</td>
+<td>0.5778</td>
+<td>0.0157</td>
+</tr>
+<tr>
+<td>0.6500</td>
+<td>0.7500</td>
+<td>753</td>
+<td>0.6996</td>
+<td>0.7025</td>
+<td>0.0167</td>
+</tr>
+<tr>
+<td>0.7500</td>
+<td>1.0000</td>
+<td>594</td>
+<td>0.8149</td>
+<td>0.8081</td>
+<td>0.0162</td>
+</tr>
+</tbody>
+</table>
+<p>Predicted and observed home-win rates track each other across the whole range;
+the biggest single-bin gap is
+0.029, which is 1.5 standard errors. A model used to multiply many probabilities
+together through a bracket has to be calibrated, not merely accurate, and this
+one is.</p>
+<hr />
+<h2 id="10-results">10. Results</h2>
+<h3 id="copy-onto-page-6">Copy onto Page 6</h3>
+<table>
+<thead>
+<tr>
+<th>Season</th>
+<th>Highest-rated team</th>
+<th>Old-format simulated title probability</th>
+<th>Play-in simulated title probability</th>
+<th>Difference in percentage points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2020-21</td>
+<td>UTAH</td>
+<td>39.05%</td>
+<td>38.77%</td>
+<td>-0.28</td>
+</tr>
+<tr>
+<td>2021-22</td>
+<td>BOS</td>
+<td>26.27%</td>
+<td>25.55%</td>
+<td>-0.72</td>
+</tr>
+<tr>
+<td>2022-23</td>
+<td>BOS</td>
+<td>26.76%</td>
+<td>26.52%</td>
+<td>-0.24</td>
+</tr>
+<tr>
+<td>2023-24</td>
+<td>BOS</td>
+<td>57.74%</td>
+<td>58.33%</td>
+<td>+0.59</td>
+</tr>
+<tr>
+<td>2024-25</td>
+<td>OKC</td>
+<td>55.80%</td>
+<td>57.87%</td>
+<td>+2.06</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Five-season average effect, equal weight per season: +0.28
+percentage points</strong> (exact calculation: +0.29 pp).</p>
+<h3 id="counts-exact-probabilities-and-monte-carlo-intervals">Counts, exact probabilities and Monte Carlo intervals</h3>
+<table>
+<thead>
+<tr>
+<th>Season</th>
+<th>Team</th>
+<th>M (tournaments per format)</th>
+<th>W old</th>
+<th>W play-in</th>
+<th>Exact old</th>
+<th>Exact play-in</th>
+<th>Exact difference (pp)</th>
+<th>Simulated difference (pp)</th>
+<th>95% interval (pp)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2020-21</td>
+<td>UTAH</td>
+<td>500,000</td>
+<td>195,232</td>
+<td>193,854</td>
+<td>0.38888</td>
+<td>0.38612</td>
+<td>-0.276</td>
+<td>-0.276</td>
+<td>[-0.306, -0.245]</td>
+</tr>
+<tr>
+<td>2021-22</td>
+<td>BOS</td>
+<td>500,000</td>
+<td>131,365</td>
+<td>127,751</td>
+<td>0.26188</td>
+<td>0.25478</td>
+<td>-0.710</td>
+<td>-0.723</td>
+<td>[-0.754, -0.692]</td>
+</tr>
+<tr>
+<td>2022-23</td>
+<td>BOS</td>
+<td>500,000</td>
+<td>133,805</td>
+<td>132,621</td>
+<td>0.26716</td>
+<td>0.26479</td>
+<td>-0.237</td>
+<td>-0.237</td>
+<td>[-0.259, -0.214]</td>
+</tr>
+<tr>
+<td>2023-24</td>
+<td>BOS</td>
+<td>500,000</td>
+<td>288,707</td>
+<td>291,655</td>
+<td>0.57772</td>
+<td>0.58378</td>
+<td>+0.605</td>
+<td>+0.590</td>
+<td>[+0.550, +0.629]</td>
+</tr>
+<tr>
+<td>2024-25</td>
+<td>OKC</td>
+<td>500,000</td>
+<td>279,012</td>
+<td>289,328</td>
+<td>0.55678</td>
+<td>0.57756</td>
+<td>+2.079</td>
+<td>+2.063</td>
+<td>[+2.020, +2.106]</td>
+</tr>
+</tbody>
+</table>
+<p>W is the number of simulated tournaments the highest-rated team won out of M.
+The interval is 95% around the simulated paired difference and reflects
+simulation noise only.</p>
+<h3 id="expected-champion-and-expected-field">Expected champion and expected field</h3>
+<table>
+<thead>
+<tr>
+<th>Season</th>
+<th>E[champion SRS], old</th>
+<th>E[champion SRS], play-in</th>
+<th>Field SRS sum, old</th>
+<th>Field SRS sum, play-in</th>
+<th>Field mean, old</th>
+<th>Field mean, play-in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2020-21</td>
+<td>6.574</td>
+<td>6.562</td>
+<td>52.16</td>
+<td>51.72</td>
+<td>3.260</td>
+<td>3.233</td>
+</tr>
+<tr>
+<td>2021-22</td>
+<td>5.695</td>
+<td>5.674</td>
+<td>53.29</td>
+<td>52.65</td>
+<td>3.331</td>
+<td>3.291</td>
+</tr>
+<tr>
+<td>2022-23</td>
+<td>4.191</td>
+<td>4.178</td>
+<td>36.99</td>
+<td>38.29</td>
+<td>2.312</td>
+<td>2.393</td>
+</tr>
+<tr>
+<td>2023-24</td>
+<td>8.602</td>
+<td>8.611</td>
+<td>60.65</td>
+<td>59.58</td>
+<td>3.790</td>
+<td>3.724</td>
+</tr>
+<tr>
+<td>2024-25</td>
+<td>10.467</td>
+<td>10.587</td>
+<td>65.52</td>
+<td>64.30</td>
+<td>4.095</td>
+<td>4.019</td>
+</tr>
+</tbody>
+</table>
+<p>The playoff field's average rating falls slightly under the play-in format in
+four of five seasons and rises in 2022-23, when the teams in positions
+9 and 10 were genuinely better than the ones in 7 and 8. Across all ten
+conference-seasons, a team in position 9 or 10 was rated above one of the
+7/8 teams six times - which is why the format's effect has no fixed sign.</p>
+<p><img alt="Playoff field strength" src="../outputs/figures/fig7_field_strength.png" /></p>
+<h3 id="one-season-in-detail-2024-25">One season in detail: 2024-25</h3>
+<p><img alt="2024-25 title probabilities" src="../outputs/figures/fig4_title_probabilities_2025.png" /></p>
+<h3 id="what-the-play-in-teams-are-playing-for">What the play-in teams are playing for</h3>
+<p><img alt="Qualification probabilities" src="../outputs/figures/fig5_qualification.png" /></p>
+<p>Positions 7 and 8 are no longer safe: across the five seasons, the probability
+that both keep their places averages 0.59 per conference. A
+position-9 team's chance of reaching the playoffs runs from
+20% to 28%, and position 10's from
+11% to 24%.</p>
+<hr />
+<h2 id="11-sensitivity">11. Sensitivity</h2>
+<h3 id="training-window-and-rating-specification">Training window and rating specification</h3>
+<p><img alt="Sensitivity" src="../outputs/figures/fig6_sensitivity.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Season</th>
+<th>Bradley-Terry ratings, 1-season training window</th>
+<th>Bradley-Terry ratings, 2-season training window</th>
+<th>Bradley-Terry ratings, 3-season training window</th>
+<th>SRS ratings, 1-season training window</th>
+<th>SRS ratings, 2-season training window</th>
+<th>SRS ratings, 3-season training window</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2020-21</td>
+<td>+0.04</td>
+<td>-0.05</td>
+<td>-0.08</td>
+<td>-0.15</td>
+<td>-0.24</td>
+<td>-0.28</td>
+</tr>
+<tr>
+<td>2021-22</td>
+<td>+0.01</td>
+<td>+0.23</td>
+<td>+0.16</td>
+<td>-0.77</td>
+<td>-0.71</td>
+<td>-0.71</td>
+</tr>
+<tr>
+<td>2022-23</td>
+<td>-0.43</td>
+<td>-0.46</td>
+<td>-0.43</td>
+<td>-0.24</td>
+<td>-0.23</td>
+<td>-0.24</td>
+</tr>
+<tr>
+<td>2023-24</td>
+<td>+0.84</td>
+<td>+0.88</td>
+<td>+0.83</td>
+<td>+0.59</td>
+<td>+0.62</td>
+<td>+0.61</td>
+</tr>
+<tr>
+<td>2024-25</td>
+<td>+0.87</td>
+<td>+0.86</td>
+<td>+0.89</td>
+<td>+2.09</td>
+<td>+2.03</td>
+<td>+2.08</td>
+</tr>
+</tbody>
+</table>
+<p>Across every window and both rating definitions, the effect stays inside
+[-0.77, +2.09]
+percentage points. Within a rating definition, changing the training window
+almost never changes a season's sign: the only exception is Bradley-Terry ratings in 2020-21, where every estimate is within 0.08 pp of zero. The window is not driving
+the answer.</p>
+<h3 id="when-the-alternative-rating-disagrees-about-who-is-strongest">When the alternative rating disagrees about who is strongest</h3>
+<p>The Bradley-Terry specification fits ratings to wins and losses only, ignoring
+margins, with a ridge penalty so early-season fits stay finite. It names a
+different strongest team in two seasons. Both readings are reported: the effect
+on the team <strong>this</strong> model calls strongest, and the effect on the team the
+baseline SRS model calls strongest.</p>
+<table>
+<thead>
+<tr>
+<th>Season</th>
+<th>Target team</th>
+<th>Which target</th>
+<th>Old</th>
+<th>Play-in</th>
+<th>Difference (pp)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2020-21</td>
+<td>UTAH</td>
+<td>this model's strongest team</td>
+<td>0.2527</td>
+<td>0.2520</td>
+<td>-0.08</td>
+</tr>
+<tr>
+<td>2020-21</td>
+<td>UTAH</td>
+<td>baseline SRS strongest team</td>
+<td>0.2527</td>
+<td>0.2520</td>
+<td>-0.08</td>
+</tr>
+<tr>
+<td>2021-22</td>
+<td>PHX</td>
+<td>this model's strongest team</td>
+<td>0.4692</td>
+<td>0.4708</td>
+<td>+0.16</td>
+</tr>
+<tr>
+<td>2021-22</td>
+<td>BOS</td>
+<td>baseline SRS strongest team</td>
+<td>0.0567</td>
+<td>0.0563</td>
+<td>-0.03</td>
+</tr>
+<tr>
+<td>2022-23</td>
+<td>MIL</td>
+<td>this model's strongest team</td>
+<td>0.2656</td>
+<td>0.2613</td>
+<td>-0.43</td>
+</tr>
+<tr>
+<td>2022-23</td>
+<td>BOS</td>
+<td>baseline SRS strongest team</td>
+<td>0.1964</td>
+<td>0.2020</td>
+<td>+0.56</td>
+</tr>
+<tr>
+<td>2023-24</td>
+<td>BOS</td>
+<td>this model's strongest team</td>
+<td>0.4941</td>
+<td>0.5024</td>
+<td>+0.83</td>
+</tr>
+<tr>
+<td>2023-24</td>
+<td>BOS</td>
+<td>baseline SRS strongest team</td>
+<td>0.4941</td>
+<td>0.5024</td>
+<td>+0.83</td>
+</tr>
+<tr>
+<td>2024-25</td>
+<td>OKC</td>
+<td>this model's strongest team</td>
+<td>0.5350</td>
+<td>0.5439</td>
+<td>+0.89</td>
+</tr>
+<tr>
+<td>2024-25</td>
+<td>OKC</td>
+<td>baseline SRS strongest team</td>
+<td>0.5350</td>
+<td>0.5439</td>
+<td>+0.89</td>
+</tr>
+</tbody>
+</table>
+<p>This is the single most important sensitivity in the study. In 2022-23
+the two ratings disagree both about who is strongest and about the sign of the
+effect. "Strongest" is itself an estimate, and the answer moves when that
+estimate moves.</p>
+<h3 id="finals-home-court_1">Finals home court</h3>
+<p>Four rules were tried: the published NBA chain, the workbook's 50/50 pilot
+assumption, and forcing every tie to the Eastern or the Western team. The
+highest-rated team's title probability is identical to machine precision under
+all four, because that team is never in a tied pair. The expected champion
+rating moves by at most 0.0024 SRS points. The tie assumption is immaterial to this study's conclusion, and
+it no longer needs to be an assumption at all.</p>
+<h3 id="data-issues">Data issues</h3>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Season</th>
+<th>Team</th>
+<th>Difference (pp)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ratings forced to the ESPN standings scoring totals</td>
+<td>2020-21</td>
+<td>UTAH</td>
+<td>-0.275</td>
+</tr>
+<tr>
+<td>ratings forced to the ESPN standings scoring totals</td>
+<td>2021-22</td>
+<td>BOS</td>
+<td>-0.690</td>
+</tr>
+<tr>
+<td>ratings forced to the ESPN standings scoring totals</td>
+<td>2022-23</td>
+<td>BOS</td>
+<td>-0.237</td>
+</tr>
+<tr>
+<td>ratings forced to the ESPN standings scoring totals</td>
+<td>2023-24</td>
+<td>BOS</td>
+<td>+0.613</td>
+</tr>
+<tr>
+<td>ratings forced to the ESPN standings scoring totals</td>
+<td>2024-25</td>
+<td>OKC</td>
+<td>+2.079</td>
+</tr>
+<tr>
+<td>archive date defect corrected (game 401161536 moved to 2020-02-29)</td>
+<td>2020-21</td>
+<td>UTAH</td>
+<td>-0.276</td>
+</tr>
+<tr>
+<td>archive date defect corrected (game 401161536 moved to 2020-02-29)</td>
+<td>2021-22</td>
+<td>BOS</td>
+<td>-0.710</td>
+</tr>
+<tr>
+<td>archive date defect corrected (game 401161536 moved to 2020-02-29)</td>
+<td>2022-23</td>
+<td>BOS</td>
+<td>-0.237</td>
+</tr>
+<tr>
+<td>archive date defect corrected (game 401161536 moved to 2020-02-29)</td>
+<td>2023-24</td>
+<td>BOS</td>
+<td>+0.605</td>
+</tr>
+<tr>
+<td>archive date defect corrected (game 401161536 moved to 2020-02-29)</td>
+<td>2024-25</td>
+<td>OKC</td>
+<td>+2.079</td>
+</tr>
+</tbody>
+</table>
+<p>Neither of the audit's two open data items - the disputed standings totals and
+the one mis-dated game - moves any season's result by as much as
+0.020
+percentage points.</p>
+<hr />
+<h2 id="12-limitations">12. Limitations</h2>
+<ol>
+<li><strong>Standings and ratings are frozen, so this is not the policy's effect.</strong>
+   A real play-in changes what teams do in March: who rests, who tanks, who
+   fights for seventh instead of settling for ninth. None of that is in the
+   model. The number here is the bracket's mechanical effect, and it is a lower
+   bound on the amount of uncertainty about the policy, not a measure of it.</li>
+<li><strong>"Strongest" is an estimate, not a fact.</strong> The baseline calls Boston the
+   strongest team three times; a win-loss rating disagrees twice and flips the
+   sign of the effect in 2022-23. Any conclusion about "the best team"
+   inherits the rating's error.</li>
+<li><strong>The game model is deliberately simple.</strong> One rating difference, one home
+   term, games independent given ratings. No injuries, no rest, no travel, no
+   matchup effects, no momentum. It is well calibrated on held-out games, which
+   is the most that can be claimed for it.</li>
+<li><strong>Five seasons is five observations.</strong> The play-in has existed in this form
+   only since 2020-21. The five-season average is an average over the five
+   seasons that exist, not an estimate with a sampling distribution, and the
+   Monte Carlo interval around it does not represent that uncertainty.</li>
+</ol>
+<hr />
+<h2 id="13-conclusion">13. Conclusion</h2>
+<p>Over the five seasons in which the play-in tournament has existed, and holding
+standings and team strengths fixed, the format changed the highest-rated team's
+probability of winning the championship by <strong>+0.29 percentage
+points on average</strong> - positive in 2 seasons, negative in 3,
+and larger than one percentage point only in 2024-25.</p>
+<p>That is a small effect, and its sign is not a property of the format. It
+depends on whether the play-in happens to promote a stronger or a weaker team
+into the seed the best team must beat, which changes season by season. The
+honest summary is that <strong>the play-in tournament does not systematically help or
+hurt the best team</strong>; it adds a small amount of noise whose direction depends
+on the season's standings.</p>
+<p>Nothing here supports a claim that the play-in is better or worse overall. It
+is a comparison on one metric, inside one model, with the rest of the policy
+held fixed.</p>
+<hr />
+<h2 id="14-plain-english-guide-to-every-computation">14. Plain-English guide to every computation</h2>
+<p><strong>Scoring margin.</strong> Points scored minus points allowed in a game. Average them
+over a season and you have a crude strength measure.</p>
+<p><strong>SRS.</strong> The crude measure is unfair to teams with hard schedules. SRS fixes
+that by defining a team's rating as its average margin plus the average rating
+of its opponents. Every team's rating depends on every other team's, so all 30
+are solved together as a system of equations, anchored by making them sum to
+zero. A rating of +5 means "about five points better than an average team
+against an average schedule".</p>
+<p><strong>Pregame ratings.</strong> To test whether the model predicts, you must not let it
+see the answer. So for each game date the ratings are rebuilt from games played
+on earlier dates only.</p>
+<p><strong>The logistic model.</strong> Take the rating gap, multiply by <code>beta</code> to turn points
+into log-odds, add <code>h</code> if the team is home (subtract it if away), then squash
+into a probability with the logistic function. Fitted by maximum likelihood on
+past seasons: choose the <code>beta</code> and <code>h</code> that make what actually happened as
+likely as possible.</p>
+<p><strong>Backward recursion for a series.</strong> Work backwards from the end. If you have
+four wins you have won (probability 1); four losses and you have lost
+(probability 0). Otherwise your chance from a given score is your chance of
+winning the next game times your chance from one-win-better, plus your chance
+of losing it times your chance from one-loss-worse. Because home court changes
+game by game, this is exact where a binomial formula would not be.</p>
+<p><strong>Why the six play-in outcomes cannot be multiplied.</strong> The team that wins the
+7/8 game becomes seed 7 and is therefore not available to be seed 8. Seed 7 and
+seed 8 are dependent. Multiplying "chance of being seed 7" by "chance of being
+seed 8" would count impossible combinations.</p>
+<p><strong>Propagating through the bracket.</strong> After the first round you do not know who
+won, so you carry a probability distribution over possible winners. Each
+following round combines two such distributions: for every possible pairing,
+the chance they meet times the chance each wins.</p>
+<p><strong>Qualification probabilities summing to two.</strong> Two of the four play-in teams
+reach the playoffs, always. So their four probabilities must add to exactly 2 -
+a check that catches most implementation mistakes instantly.</p>
+<p><strong>Monte Carlo.</strong> Instead of computing, play the season out with random numbers
+hundreds of thousands of times and count. If simulation and exact calculation
+agree, two independent implementations of the rules agree, which is much
+stronger evidence than either alone.</p>
+<p><strong>Common random numbers.</strong> Both formats are run on the same random draws, so a
+difference between them is a real difference in the rules rather than a
+difference in luck. It shrinks the noise in the comparison by a factor of about
+6.</p>
+<p><strong>Brier score and log loss.</strong> Two ways of scoring probability forecasts. Brier
+is the average squared error between the forecast and what happened; log loss
+punishes confident mistakes harder. Lower is better for both.</p>
+<p><strong>Calibration.</strong> Of the games you called 70%, did about 70% happen? Accuracy
+alone is not enough here, because these probabilities get multiplied together
+through four rounds.</p>
+<hr />
+<h2 id="15-corrections-for-pages-1-to-5">15. Corrections for Pages 1 to 5</h2>
+<p>Every number on the handwritten pages was recomputed from the raw games
+(<code>outputs/tables/worked_examples.csv</code>). <strong>All of them are arithmetically
+correct - no figure needs changing.</strong> Four labelling changes are needed so the
+pages say what they mean:</p>
+<ol>
+<li><strong>Page 2 - label the ratings.</strong> The four solved values (BOS
+   6.106, CLE
+   3.375, NY
+   -6.894, IND
+   -2.587) come
+   from a 22-game mini-league among those four teams only. Write
+   "restricted four-team ratings, not full-season NBA SRS" on the page. Boston's
+   full-season 2024-25 SRS is
+   8.28,
+   not 6.11.</li>
+<li><strong>Page 3 - state the H convention.</strong> Write the equation as
+   <code>P(A beats B) = sigmoid(beta*(R_A - R_B) + h*H)</code> with <code>H = +1, -1, 0</code>, and
+   add one line: this is the same model as the fitted form "P(home wins) with
+   H = 1 at home, 0 at neutral", seen from team A instead of from the host.
+   Without that line the two forms look like different models.</li>
+<li><strong>Pages 4 and 5 - say what 83.22% is.</strong> It is the probability Golden State
+   <strong>qualifies</strong> for the playoffs, as seed 7 or seed 8. It is not the
+   probability of winning a play-in game
+   (that is 0.5207
+   against Memphis at home). Add: "seed 7 and seed 8 are dependent - use the six
+   ordered outcomes, never the product of two marginals."</li>
+<li><strong>Page 6 - the target is 2, not 1.</strong> Label the check "the four qualification
+   probabilities sum to 2, because exactly two of the four teams get in". A
+   reader who expects probabilities to sum to 1 will think the page is wrong.</li>
+</ol>
+<p>One presentational note for Page 5: Memphis's qualification probability
+(0.8338) is
+slightly <strong>higher</strong> than Golden State's
+(0.8322) even
+though Golden State hosts, because Memphis is the better-rated team. That is
+worth a sentence on the page; it looks like an error and is not.</p>
+<h3 id="worked-example-verification">Worked-example verification</h3>
+<table>
+<thead>
+<tr>
+<th>page</th>
+<th>quantity</th>
+<th>value_on_the_page</th>
+<th>recomputed</th>
+<th>agrees</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>average scoring margin</td>
+<td>11.400000</td>
+<td>11.400000</td>
+<td>True</td>
+</tr>
+<tr>
+<td>2</td>
+<td>games inside the four-team subset</td>
+<td>22.000000</td>
+<td>22</td>
+<td>True</td>
+</tr>
+<tr>
+<td>2</td>
+<td>BOS restricted rating</td>
+<td>6.105769</td>
+<td>6.105769</td>
+<td>True</td>
+</tr>
+<tr>
+<td>2</td>
+<td>CLE restricted rating</td>
+<td>3.375000</td>
+<td>3.375000</td>
+<td>True</td>
+</tr>
+<tr>
+<td>2</td>
+<td>NY restricted rating</td>
+<td>-6.894231</td>
+<td>-6.894231</td>
+<td>True</td>
+</tr>
+<tr>
+<td>2</td>
+<td>IND restricted rating</td>
+<td>-2.586538</td>
+<td>-2.586538</td>
+<td>True</td>
+</tr>
+<tr>
+<td>2</td>
+<td>ratings sum to zero</td>
+<td>0.000000</td>
+<td>-0.000000</td>
+<td>True</td>
+</tr>
+<tr>
+<td>3</td>
+<td>beta (3-season window ending 2023-24)</td>
+<td>0.112891</td>
+<td>0.112891</td>
+<td>True</td>
+</tr>
+<tr>
+<td>3</td>
+<td>h</td>
+<td>0.222492</td>
+<td>0.222492</td>
+<td>True</td>
+</tr>
+<tr>
+<td>3</td>
+<td>P(Golden State beats Memphis at home)</td>
+<td>0.520743</td>
+<td>0.520743</td>
+<td>True</td>
+</tr>
+<tr>
+<td>4</td>
+<td>P(seed 7 = GS, seed 8 = MEM)</td>
+<td>0.354538</td>
+<td>0.354538</td>
+<td>True</td>
+</tr>
+<tr>
+<td>4</td>
+<td>P(seed 7 = GS, seed 8 = SAC)</td>
+<td>0.102452</td>
+<td>0.102452</td>
+<td>True</td>
+</tr>
+<tr>
+<td>4</td>
+<td>P(seed 7 = GS, seed 8 = DAL)</td>
+<td>0.063753</td>
+<td>0.063753</td>
+<td>True</td>
+</tr>
+<tr>
+<td>4</td>
+<td>P(seed 7 = MEM, seed 8 = GS)</td>
+<td>0.311435</td>
+<td>0.311435</td>
+<td>True</td>
+</tr>
+<tr>
+<td>4</td>
+<td>P(seed 7 = MEM, seed 8 = SAC)</td>
+<td>0.103265</td>
+<td>0.103265</td>
+<td>True</td>
+</tr>
+<tr>
+<td>4</td>
+<td>P(seed 7 = MEM, seed 8 = DAL)</td>
+<td>0.064557</td>
+<td>0.064557</td>
+<td>True</td>
+</tr>
+<tr>
+<td>4</td>
+<td>six ordered outcomes sum to 1</td>
+<td>1.000000</td>
+<td>1.000000</td>
+<td>True</td>
+</tr>
+<tr>
+<td>5</td>
+<td>P(GS qualifies)</td>
+<td>0.832178</td>
+<td>0.832178</td>
+<td>True</td>
+</tr>
+<tr>
+<td>5</td>
+<td>P(MEM qualifies)</td>
+<td>0.833795</td>
+<td>0.833795</td>
+<td>True</td>
+</tr>
+<tr>
+<td>5</td>
+<td>P(SAC qualifies)</td>
+<td>0.205717</td>
+<td>0.205717</td>
+<td>True</td>
+</tr>
+<tr>
+<td>5</td>
+<td>P(DAL qualifies)</td>
+<td>0.128310</td>
+<td>0.128310</td>
+<td>True</td>
+</tr>
+<tr>
+<td>6</td>
+<td>the four qualification probabilities sum to 2</td>
+<td>2.000000</td>
+<td>2.000000</td>
+<td>True</td>
+</tr>
+<tr>
+<td>8</td>
+<td>P(Golden State beats Memphis, neutral court)</td>
+<td>0.465188</td>
+<td>0.465188</td>
+<td>True</td>
+</tr>
+<tr>
+<td>8</td>
+<td>constant-p best-of-seven</td>
+<td>0.424217</td>
+<td>0.424217</td>
+<td>True</td>
+</tr>
+<tr>
+<td>8</td>
+<td>backward recursion agrees with the binomial sum</td>
+<td>0.424217</td>
+<td>0.424217</td>
+<td>True</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="appendix-a-what-runs-what">Appendix A - what runs what</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run_all.py</code></td>
+<td>one command, whole study</td>
+</tr>
+<tr>
+<td><code>src/nbaplayin/audit.py</code></td>
+<td>step 1, workbook against independent sources</td>
+</tr>
+<tr>
+<td><code>src/nbaplayin/ratings.py</code></td>
+<td>step 2a, SRS and Bradley-Terry, full-season and pregame</td>
+</tr>
+<tr>
+<td><code>src/nbaplayin/model.py</code></td>
+<td>step 2b, the logistic game model</td>
+</tr>
+<tr>
+<td><code>src/nbaplayin/tournament.py</code></td>
+<td>steps 3-4, both formats, exact</td>
+</tr>
+<tr>
+<td><code>src/nbaplayin/montecarlo.py</code></td>
+<td>step 5, simulation</td>
+</tr>
+<tr>
+<td><code>src/nbaplayin/validation.py</code></td>
+<td>step 6a, held-out prediction</td>
+</tr>
+<tr>
+<td><code>src/nbaplayin/sensitivity.py</code></td>
+<td>step 6b, every variant</td>
+</tr>
+<tr>
+<td><code>src/nbaplayin/worked_examples.py</code></td>
+<td>recomputes the six handwritten pages</td>
+</tr>
+<tr>
+<td><code>src/nbaplayin/figures.py</code></td>
+<td>the seven charts</td>
+</tr>
+<tr>
+<td><code>src/nbaplayin/report.py</code></td>
+<td>this document</td>
+</tr>
+<tr>
+<td><code>tests/</code></td>
+<td>5 test files, run with <code>pytest</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-b-fitted-coefficients-every-window-and-specification">Appendix B - fitted coefficients, every window and specification</h2>
+<table>
+<thead>
+<tr>
+<th>season</th>
+<th>spec</th>
+<th>window</th>
+<th>train_first</th>
+<th>train_last</th>
+<th>train_games</th>
+<th>beta</th>
+<th>beta_se</th>
+<th>h</th>
+<th>h_se</th>
+<th>role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2021</td>
+<td>srs</td>
+<td>1</td>
+<td>2020</td>
+<td>2020</td>
+<td>750</td>
+<td>0.09791</td>
+<td>0.01153</td>
+<td>0.18753</td>
+<td>0.08318</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>srs</td>
+<td>2</td>
+<td>2019</td>
+<td>2020</td>
+<td>1672</td>
+<td>0.10818</td>
+<td>0.00823</td>
+<td>0.31786</td>
+<td>0.05446</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>srs</td>
+<td>3</td>
+<td>2018</td>
+<td>2020</td>
+<td>2593</td>
+<td>0.11482</td>
+<td>0.00699</td>
+<td>0.33780</td>
+<td>0.04338</td>
+<td>prespecified baseline</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>srs</td>
+<td>1</td>
+<td>2021</td>
+<td>2021</td>
+<td>769</td>
+<td>0.11535</td>
+<td>0.01297</td>
+<td>0.23867</td>
+<td>0.07733</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>srs</td>
+<td>2</td>
+<td>2020</td>
+<td>2021</td>
+<td>1519</td>
+<td>0.10585</td>
+<td>0.00863</td>
+<td>0.21514</td>
+<td>0.05659</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>srs</td>
+<td>3</td>
+<td>2019</td>
+<td>2021</td>
+<td>2441</td>
+<td>0.11016</td>
+<td>0.00695</td>
+<td>0.29179</td>
+<td>0.04451</td>
+<td>prespecified baseline</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>srs</td>
+<td>1</td>
+<td>2022</td>
+<td>2022</td>
+<td>922</td>
+<td>0.11113</td>
+<td>0.01189</td>
+<td>0.17674</td>
+<td>0.06995</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>srs</td>
+<td>2</td>
+<td>2021</td>
+<td>2022</td>
+<td>1691</td>
+<td>0.11304</td>
+<td>0.00876</td>
+<td>0.20467</td>
+<td>0.05187</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>srs</td>
+<td>3</td>
+<td>2020</td>
+<td>2022</td>
+<td>2441</td>
+<td>0.10765</td>
+<td>0.00698</td>
+<td>0.20000</td>
+<td>0.04399</td>
+<td>prespecified baseline</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>srs</td>
+<td>1</td>
+<td>2023</td>
+<td>2023</td>
+<td>922</td>
+<td>0.10707</td>
+<td>0.01410</td>
+<td>0.31284</td>
+<td>0.06923</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>srs</td>
+<td>2</td>
+<td>2022</td>
+<td>2023</td>
+<td>1844</td>
+<td>0.10941</td>
+<td>0.00908</td>
+<td>0.24598</td>
+<td>0.04917</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>srs</td>
+<td>3</td>
+<td>2021</td>
+<td>2023</td>
+<td>2613</td>
+<td>0.11139</td>
+<td>0.00744</td>
+<td>0.24392</td>
+<td>0.04149</td>
+<td>prespecified baseline</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>srs</td>
+<td>1</td>
+<td>2024</td>
+<td>2024</td>
+<td>923</td>
+<td>0.11727</td>
+<td>0.01053</td>
+<td>0.17186</td>
+<td>0.07211</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>srs</td>
+<td>2</td>
+<td>2023</td>
+<td>2024</td>
+<td>1845</td>
+<td>0.11386</td>
+<td>0.00842</td>
+<td>0.24574</td>
+<td>0.04992</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>srs</td>
+<td>3</td>
+<td>2022</td>
+<td>2024</td>
+<td>2767</td>
+<td>0.11289</td>
+<td>0.00687</td>
+<td>0.22249</td>
+<td>0.04063</td>
+<td>prespecified baseline</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>bt</td>
+<td>1</td>
+<td>2020</td>
+<td>2020</td>
+<td>750</td>
+<td>0.80267</td>
+<td>0.09318</td>
+<td>0.18461</td>
+<td>0.08325</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>bt</td>
+<td>2</td>
+<td>2019</td>
+<td>2020</td>
+<td>1672</td>
+<td>0.90644</td>
+<td>0.06880</td>
+<td>0.31456</td>
+<td>0.05441</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>bt</td>
+<td>3</td>
+<td>2018</td>
+<td>2020</td>
+<td>2593</td>
+<td>0.94492</td>
+<td>0.05726</td>
+<td>0.33422</td>
+<td>0.04335</td>
+<td>prespecified baseline</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>bt</td>
+<td>1</td>
+<td>2021</td>
+<td>2021</td>
+<td>769</td>
+<td>1.09777</td>
+<td>0.12613</td>
+<td>0.23221</td>
+<td>0.07704</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>bt</td>
+<td>2</td>
+<td>2020</td>
+<td>2021</td>
+<td>1519</td>
+<td>0.91300</td>
+<td>0.07539</td>
+<td>0.21039</td>
+<td>0.05642</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>bt</td>
+<td>3</td>
+<td>2019</td>
+<td>2021</td>
+<td>2441</td>
+<td>0.95041</td>
+<td>0.06050</td>
+<td>0.28736</td>
+<td>0.04439</td>
+<td>prespecified baseline</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>bt</td>
+<td>1</td>
+<td>2022</td>
+<td>2022</td>
+<td>922</td>
+<td>0.92370</td>
+<td>0.10197</td>
+<td>0.17696</td>
+<td>0.06968</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>bt</td>
+<td>2</td>
+<td>2021</td>
+<td>2022</td>
+<td>1691</td>
+<td>0.99466</td>
+<td>0.07940</td>
+<td>0.20204</td>
+<td>0.05166</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>bt</td>
+<td>3</td>
+<td>2020</td>
+<td>2022</td>
+<td>2441</td>
+<td>0.91668</td>
+<td>0.06062</td>
+<td>0.19715</td>
+<td>0.04385</td>
+<td>prespecified baseline</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>bt</td>
+<td>1</td>
+<td>2023</td>
+<td>2023</td>
+<td>922</td>
+<td>0.91210</td>
+<td>0.11728</td>
+<td>0.30868</td>
+<td>0.06929</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>bt</td>
+<td>2</td>
+<td>2022</td>
+<td>2023</td>
+<td>1844</td>
+<td>0.91868</td>
+<td>0.07694</td>
+<td>0.24353</td>
+<td>0.04911</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>bt</td>
+<td>3</td>
+<td>2021</td>
+<td>2023</td>
+<td>2613</td>
+<td>0.96876</td>
+<td>0.06569</td>
+<td>0.24041</td>
+<td>0.04140</td>
+<td>prespecified baseline</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>bt</td>
+<td>1</td>
+<td>2024</td>
+<td>2024</td>
+<td>923</td>
+<td>0.99916</td>
+<td>0.09026</td>
+<td>0.16266</td>
+<td>0.07205</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>bt</td>
+<td>2</td>
+<td>2023</td>
+<td>2024</td>
+<td>1845</td>
+<td>0.96839</td>
+<td>0.07128</td>
+<td>0.23898</td>
+<td>0.04992</td>
+<td>sensitivity window</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>bt</td>
+<td>3</td>
+<td>2022</td>
+<td>2024</td>
+<td>2767</td>
+<td>0.95358</td>
+<td>0.05838</td>
+<td>0.21799</td>
+<td>0.04058</td>
+<td>prespecified baseline</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-c-validation-every-season-and-window">Appendix C - validation, every season and window</h2>
+<table>
+<thead>
+<tr>
+<th>season</th>
+<th>window</th>
+<th>test_set</th>
+<th>games</th>
+<th>brier</th>
+<th>log_loss</th>
+<th>accuracy</th>
+<th>brier_baseline</th>
+<th>log_loss_baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2021</td>
+<td>1</td>
+<td>Regular season (pregame ratings)</td>
+<td>769</td>
+<td>0.2191</td>
+<td>0.6285</td>
+<td>0.6502</td>
+<td>0.2475</td>
+<td>0.6881</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>1</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.1964</td>
+<td>0.5844</td>
+<td>0.8333</td>
+<td>0.2266</td>
+<td>0.6463</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>1</td>
+<td>Playoffs (frozen ratings)</td>
+<td>85</td>
+<td>0.2282</td>
+<td>0.6485</td>
+<td>0.6588</td>
+<td>0.2466</td>
+<td>0.6863</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>2</td>
+<td>Regular season (pregame ratings)</td>
+<td>769</td>
+<td>0.2191</td>
+<td>0.6280</td>
+<td>0.6359</td>
+<td>0.2474</td>
+<td>0.6879</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>2</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.1796</td>
+<td>0.5486</td>
+<td>0.8333</td>
+<td>0.2104</td>
+<td>0.6135</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>2</td>
+<td>Playoffs (frozen ratings)</td>
+<td>85</td>
+<td>0.2274</td>
+<td>0.6468</td>
+<td>0.6471</td>
+<td>0.2458</td>
+<td>0.6848</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>3</td>
+<td>Regular season (pregame ratings)</td>
+<td>769</td>
+<td>0.2192</td>
+<td>0.6282</td>
+<td>0.6359</td>
+<td>0.2476</td>
+<td>0.6883</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>3</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.1764</td>
+<td>0.5415</td>
+<td>0.8333</td>
+<td>0.2073</td>
+<td>0.6073</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>3</td>
+<td>Playoffs (frozen ratings)</td>
+<td>85</td>
+<td>0.2271</td>
+<td>0.6460</td>
+<td>0.6471</td>
+<td>0.2459</td>
+<td>0.6849</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>1</td>
+<td>Regular season (pregame ratings)</td>
+<td>922</td>
+<td>0.2218</td>
+<td>0.6354</td>
+<td>0.6529</td>
+<td>0.2487</td>
+<td>0.6905</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>1</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2370</td>
+<td>0.6667</td>
+<td>0.6667</td>
+<td>0.2352</td>
+<td>0.6635</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>1</td>
+<td>Playoffs (frozen ratings)</td>
+<td>87</td>
+<td>0.2263</td>
+<td>0.6447</td>
+<td>0.6552</td>
+<td>0.2425</td>
+<td>0.6781</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>2</td>
+<td>Regular season (pregame ratings)</td>
+<td>922</td>
+<td>0.2219</td>
+<td>0.6352</td>
+<td>0.6508</td>
+<td>0.2485</td>
+<td>0.6902</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>2</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2378</td>
+<td>0.6682</td>
+<td>0.6667</td>
+<td>0.2369</td>
+<td>0.6669</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>2</td>
+<td>Playoffs (frozen ratings)</td>
+<td>87</td>
+<td>0.2272</td>
+<td>0.6467</td>
+<td>0.6552</td>
+<td>0.2432</td>
+<td>0.6795</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>3</td>
+<td>Regular season (pregame ratings)</td>
+<td>922</td>
+<td>0.2224</td>
+<td>0.6364</td>
+<td>0.6497</td>
+<td>0.2490</td>
+<td>0.6911</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>3</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2345</td>
+<td>0.6616</td>
+<td>0.6667</td>
+<td>0.2333</td>
+<td>0.6595</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>3</td>
+<td>Playoffs (frozen ratings)</td>
+<td>87</td>
+<td>0.2258</td>
+<td>0.6437</td>
+<td>0.6667</td>
+<td>0.2418</td>
+<td>0.6766</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>1</td>
+<td>Regular season (pregame ratings)</td>
+<td>922</td>
+<td>0.2294</td>
+<td>0.6506</td>
+<td>0.6226</td>
+<td>0.2461</td>
+<td>0.6853</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>1</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2633</td>
+<td>0.7199</td>
+<td>0.5000</td>
+<td>0.2515</td>
+<td>0.6962</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>1</td>
+<td>Playoffs (frozen ratings)</td>
+<td>84</td>
+<td>0.2445</td>
+<td>0.6829</td>
+<td>0.6071</td>
+<td>0.2441</td>
+<td>0.6813</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>2</td>
+<td>Regular season (pregame ratings)</td>
+<td>922</td>
+<td>0.2291</td>
+<td>0.6498</td>
+<td>0.6269</td>
+<td>0.2457</td>
+<td>0.6846</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>2</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2641</td>
+<td>0.7214</td>
+<td>0.5000</td>
+<td>0.2520</td>
+<td>0.6973</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>2</td>
+<td>Playoffs (frozen ratings)</td>
+<td>84</td>
+<td>0.2440</td>
+<td>0.6821</td>
+<td>0.5833</td>
+<td>0.2434</td>
+<td>0.6800</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>3</td>
+<td>Regular season (pregame ratings)</td>
+<td>922</td>
+<td>0.2291</td>
+<td>0.6498</td>
+<td>0.6291</td>
+<td>0.2458</td>
+<td>0.6848</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>3</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2634</td>
+<td>0.7201</td>
+<td>0.5000</td>
+<td>0.2518</td>
+<td>0.6969</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>3</td>
+<td>Playoffs (frozen ratings)</td>
+<td>84</td>
+<td>0.2437</td>
+<td>0.6813</td>
+<td>0.5833</td>
+<td>0.2437</td>
+<td>0.6804</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>1</td>
+<td>Regular season (pregame ratings)</td>
+<td>923</td>
+<td>0.2117</td>
+<td>0.6099</td>
+<td>0.6479</td>
+<td>0.2503</td>
+<td>0.6939</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>1</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2000</td>
+<td>0.5925</td>
+<td>0.8333</td>
+<td>0.2082</td>
+<td>0.6091</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>1</td>
+<td>Playoffs (frozen ratings)</td>
+<td>82</td>
+<td>0.2190</td>
+<td>0.6293</td>
+<td>0.6707</td>
+<td>0.2429</td>
+<td>0.6790</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>2</td>
+<td>Regular season (pregame ratings)</td>
+<td>923</td>
+<td>0.2109</td>
+<td>0.6080</td>
+<td>0.6511</td>
+<td>0.2494</td>
+<td>0.6920</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>2</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2072</td>
+<td>0.6072</td>
+<td>0.8333</td>
+<td>0.2166</td>
+<td>0.6261</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>2</td>
+<td>Playoffs (frozen ratings)</td>
+<td>82</td>
+<td>0.2192</td>
+<td>0.6295</td>
+<td>0.6951</td>
+<td>0.2437</td>
+<td>0.6804</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>3</td>
+<td>Regular season (pregame ratings)</td>
+<td>923</td>
+<td>0.2108</td>
+<td>0.6079</td>
+<td>0.6522</td>
+<td>0.2494</td>
+<td>0.6920</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>3</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2073</td>
+<td>0.6076</td>
+<td>0.8333</td>
+<td>0.2169</td>
+<td>0.6268</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>3</td>
+<td>Playoffs (frozen ratings)</td>
+<td>82</td>
+<td>0.2191</td>
+<td>0.6292</td>
+<td>0.6951</td>
+<td>0.2437</td>
+<td>0.6805</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>1</td>
+<td>Regular season (pregame ratings)</td>
+<td>919</td>
+<td>0.2127</td>
+<td>0.6117</td>
+<td>0.6485</td>
+<td>0.2490</td>
+<td>0.6911</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>1</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2249</td>
+<td>0.6407</td>
+<td>0.8333</td>
+<td>0.2511</td>
+<td>0.6953</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>1</td>
+<td>Playoffs (frozen ratings)</td>
+<td>84</td>
+<td>0.2370</td>
+<td>0.6665</td>
+<td>0.6429</td>
+<td>0.2464</td>
+<td>0.6860</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>2</td>
+<td>Regular season (pregame ratings)</td>
+<td>919</td>
+<td>0.2130</td>
+<td>0.6125</td>
+<td>0.6507</td>
+<td>0.2493</td>
+<td>0.6918</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>2</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2281</td>
+<td>0.6467</td>
+<td>0.5000</td>
+<td>0.2526</td>
+<td>0.6984</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>2</td>
+<td>Playoffs (frozen ratings)</td>
+<td>84</td>
+<td>0.2363</td>
+<td>0.6646</td>
+<td>0.5952</td>
+<td>0.2453</td>
+<td>0.6837</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>3</td>
+<td>Regular season (pregame ratings)</td>
+<td>919</td>
+<td>0.2128</td>
+<td>0.6121</td>
+<td>0.6485</td>
+<td>0.2492</td>
+<td>0.6915</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>3</td>
+<td>Play-in games (frozen ratings)</td>
+<td>6</td>
+<td>0.2274</td>
+<td>0.6454</td>
+<td>0.5000</td>
+<td>0.2522</td>
+<td>0.6976</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>3</td>
+<td>Playoffs (frozen ratings)</td>
+<td>84</td>
+<td>0.2362</td>
+<td>0.6644</td>
+<td>0.5952</td>
+<td>0.2455</td>
+<td>0.6841</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-d-play-in-seed-states-all-five-seasons">Appendix D - play-in seed states, all five seasons</h2>
+<table>
+<thead>
+<tr>
+<th>season</th>
+<th>conference</th>
+<th>state</th>
+<th>seed7</th>
+<th>seed8</th>
+<th>probability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2021</td>
+<td>Eastern</td>
+<td>1</td>
+<td>BOS</td>
+<td>WSH</td>
+<td>0.370130</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Eastern</td>
+<td>2</td>
+<td>BOS</td>
+<td>IND</td>
+<td>0.196775</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Eastern</td>
+<td>3</td>
+<td>BOS</td>
+<td>CHA</td>
+<td>0.101423</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Eastern</td>
+<td>4</td>
+<td>WSH</td>
+<td>BOS</td>
+<td>0.212476</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Eastern</td>
+<td>5</td>
+<td>WSH</td>
+<td>IND</td>
+<td>0.079135</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Eastern</td>
+<td>6</td>
+<td>WSH</td>
+<td>CHA</td>
+<td>0.040061</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Western</td>
+<td>1</td>
+<td>LAL</td>
+<td>GS</td>
+<td>0.383288</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Western</td>
+<td>2</td>
+<td>LAL</td>
+<td>MEM</td>
+<td>0.171385</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Western</td>
+<td>3</td>
+<td>LAL</td>
+<td>SA</td>
+<td>0.074617</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Western</td>
+<td>4</td>
+<td>GS</td>
+<td>LAL</td>
+<td>0.242213</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Western</td>
+<td>5</td>
+<td>GS</td>
+<td>MEM</td>
+<td>0.089883</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Western</td>
+<td>6</td>
+<td>GS</td>
+<td>SA</td>
+<td>0.038614</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Eastern</td>
+<td>1</td>
+<td>BKN</td>
+<td>CLE</td>
+<td>0.321577</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Eastern</td>
+<td>2</td>
+<td>BKN</td>
+<td>ATL</td>
+<td>0.134102</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Eastern</td>
+<td>3</td>
+<td>BKN</td>
+<td>CHA</td>
+<td>0.083606</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Eastern</td>
+<td>4</td>
+<td>CLE</td>
+<td>BKN</td>
+<td>0.259667</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Eastern</td>
+<td>5</td>
+<td>CLE</td>
+<td>ATL</td>
+<td>0.123665</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Eastern</td>
+<td>6</td>
+<td>CLE</td>
+<td>CHA</td>
+<td>0.077384</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Western</td>
+<td>1</td>
+<td>MIN</td>
+<td>LAC</td>
+<td>0.373578</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Western</td>
+<td>2</td>
+<td>MIN</td>
+<td>NO</td>
+<td>0.140838</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Western</td>
+<td>3</td>
+<td>MIN</td>
+<td>SA</td>
+<td>0.122246</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Western</td>
+<td>4</td>
+<td>LAC</td>
+<td>MIN</td>
+<td>0.236218</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Western</td>
+<td>5</td>
+<td>LAC</td>
+<td>NO</td>
+<td>0.067862</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Western</td>
+<td>6</td>
+<td>LAC</td>
+<td>SA</td>
+<td>0.059259</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Eastern</td>
+<td>1</td>
+<td>MIA</td>
+<td>ATL</td>
+<td>0.278790</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Eastern</td>
+<td>2</td>
+<td>MIA</td>
+<td>TOR</td>
+<td>0.144766</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Eastern</td>
+<td>3</td>
+<td>MIA</td>
+<td>CHI</td>
+<td>0.114247</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Eastern</td>
+<td>4</td>
+<td>ATL</td>
+<td>MIA</td>
+<td>0.233997</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Eastern</td>
+<td>5</td>
+<td>ATL</td>
+<td>TOR</td>
+<td>0.127528</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Eastern</td>
+<td>6</td>
+<td>ATL</td>
+<td>CHI</td>
+<td>0.100673</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Western</td>
+<td>1</td>
+<td>LAL</td>
+<td>MIN</td>
+<td>0.288045</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Western</td>
+<td>2</td>
+<td>LAL</td>
+<td>NO</td>
+<td>0.160797</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Western</td>
+<td>3</td>
+<td>LAL</td>
+<td>OKC</td>
+<td>0.118119</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Western</td>
+<td>4</td>
+<td>MIN</td>
+<td>LAL</td>
+<td>0.227515</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Western</td>
+<td>5</td>
+<td>MIN</td>
+<td>NO</td>
+<td>0.118549</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Western</td>
+<td>6</td>
+<td>MIN</td>
+<td>OKC</td>
+<td>0.086976</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Eastern</td>
+<td>1</td>
+<td>PHI</td>
+<td>MIA</td>
+<td>0.385524</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Eastern</td>
+<td>2</td>
+<td>PHI</td>
+<td>CHI</td>
+<td>0.125518</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Eastern</td>
+<td>3</td>
+<td>PHI</td>
+<td>ATL</td>
+<td>0.087921</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Eastern</td>
+<td>4</td>
+<td>MIA</td>
+<td>PHI</td>
+<td>0.272239</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Eastern</td>
+<td>5</td>
+<td>MIA</td>
+<td>CHI</td>
+<td>0.075818</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Eastern</td>
+<td>6</td>
+<td>MIA</td>
+<td>ATL</td>
+<td>0.052980</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Western</td>
+<td>1</td>
+<td>NO</td>
+<td>LAL</td>
+<td>0.338924</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Western</td>
+<td>2</td>
+<td>NO</td>
+<td>SAC</td>
+<td>0.168512</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Western</td>
+<td>3</td>
+<td>NO</td>
+<td>GS</td>
+<td>0.143056</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Western</td>
+<td>4</td>
+<td>LAL</td>
+<td>NO</td>
+<td>0.214367</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Western</td>
+<td>5</td>
+<td>LAL</td>
+<td>SAC</td>
+<td>0.072928</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Western</td>
+<td>6</td>
+<td>LAL</td>
+<td>GS</td>
+<td>0.062213</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Eastern</td>
+<td>1</td>
+<td>ORL</td>
+<td>ATL</td>
+<td>0.310529</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Eastern</td>
+<td>2</td>
+<td>ORL</td>
+<td>CHI</td>
+<td>0.124808</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Eastern</td>
+<td>3</td>
+<td>ORL</td>
+<td>MIA</td>
+<td>0.139869</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Eastern</td>
+<td>4</td>
+<td>ATL</td>
+<td>ORL</td>
+<td>0.237780</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Eastern</td>
+<td>5</td>
+<td>ATL</td>
+<td>CHI</td>
+<td>0.087983</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Eastern</td>
+<td>6</td>
+<td>ATL</td>
+<td>MIA</td>
+<td>0.099031</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Western</td>
+<td>1</td>
+<td>GS</td>
+<td>MEM</td>
+<td>0.354538</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Western</td>
+<td>2</td>
+<td>GS</td>
+<td>SAC</td>
+<td>0.102452</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Western</td>
+<td>3</td>
+<td>GS</td>
+<td>DAL</td>
+<td>0.063753</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Western</td>
+<td>4</td>
+<td>MEM</td>
+<td>GS</td>
+<td>0.311435</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Western</td>
+<td>5</td>
+<td>MEM</td>
+<td>SAC</td>
+<td>0.103265</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>Western</td>
+<td>6</td>
+<td>MEM</td>
+<td>DAL</td>
+<td>0.064557</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-e-finals-hosting-ties-and-how-each-was-resolved">Appendix E - Finals hosting ties and how each was resolved</h2>
+<table>
+<thead>
+<tr>
+<th>season</th>
+<th>east</th>
+<th>west</th>
+<th>rule</th>
+<th>east_hosts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2021</td>
+<td>CHA</td>
+<td>SA</td>
+<td>record against the opposite conference</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>MIA</td>
+<td>GS</td>
+<td>head-to-head record</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>TOR</td>
+<td>DEN</td>
+<td>record against the opposite conference</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>CHI</td>
+<td>MIN</td>
+<td>head-to-head record</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>CLE</td>
+<td>MEM</td>
+<td>record against the opposite conference</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>BKN</td>
+<td>PHX</td>
+<td>head-to-head record</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>MIA</td>
+<td>LAC</td>
+<td>head-to-head record</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>MIA</td>
+<td>GS</td>
+<td>record against the opposite conference</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>CHI</td>
+<td>OKC</td>
+<td>head-to-head record</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>NY</td>
+<td>DAL</td>
+<td>head-to-head record</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>MIL</td>
+<td>PHX</td>
+<td>record against the opposite conference</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>MIL</td>
+<td>NO</td>
+<td>record against the opposite conference</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>ORL</td>
+<td>LAL</td>
+<td>record against the opposite conference</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>IND</td>
+<td>LAL</td>
+<td>record against the opposite conference</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>PHI</td>
+<td>LAL</td>
+<td>record against the opposite conference</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>MIA</td>
+<td>SAC</td>
+<td>head-to-head record</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>MIA</td>
+<td>GS</td>
+<td>record against the opposite conference</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>IND</td>
+<td>LAL</td>
+<td>head-to-head record</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>IND</td>
+<td>DEN</td>
+<td>record against the opposite conference</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>IND</td>
+<td>LAC</td>
+<td>head-to-head record</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>MIL</td>
+<td>GS</td>
+<td>head-to-head record</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>MIL</td>
+<td>MEM</td>
+<td>head-to-head record</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>ATL</td>
+<td>SAC</td>
+<td>record against the opposite conference</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>2025</td>
+<td>CHI</td>
+<td>DAL</td>
+<td>head-to-head record</td>
+<td>0.0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-f-per-team-results">Appendix F - per-team results</h2>
+<p>The full 150-row table of ratings, qualification probabilities and title
+probabilities under both formats is in
+<code>outputs/tables/exact_team_results.csv</code>, and round-by-round advancement
+probabilities are in <code>outputs/tables/advancement.csv</code>.</p></body></html>

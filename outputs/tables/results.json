@@ -1,0 +1,27 @@
+{
+  "replicates": 500000,
+  "seed": 20250921,
+  "seasons": [
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "five_season_mean_exact_pp": 0.2922349368798305,
+  "five_season_mean_mc_pp": 0.28352000000000005,
+  "five_season_mean_se_pp": 0.007794678323498689,
+  "seasons_where_playin_helps": 2,
+  "max_abs_exact_minus_simulated": 0.0018583973087891725,
+  "mean_abs_exact_minus_simulated": 0.00013150163597510487,
+  "worst_z_exact_vs_simulated": 3.134453357398216,
+  "unresolved_finals_ties": 0,
+  "finals_tie_pairs": 24,
+  "window_spec_range_pp": [
+    -0.7663557595551374,
+    2.0876242151569246
+  ],
+  "finals_rule_max_shift_pp": 0.0,
+  "standings_margin_max_shift_pp": 0.019886104941996274,
+  "date_defect_max_shift_pp": 4.2161270380480786e-05
+}

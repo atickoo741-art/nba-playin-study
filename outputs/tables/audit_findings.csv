@@ -1,0 +1,19 @@
+check,status,detail
+Game IDs unique,pass,"9519 games, 0 duplicated IDs"
+Games per season,pass,"counts 2018:1230, 2019:1230, 2020:1059, 2021:1080, 2022:1230, 2023:1230, 2024:1230, 2025:1230; all match the published schedule"
+No repeated date/home/away pairs,pass,0 repeated matchup-days
+One team plays at most one game per day,known issue,"1 team-day(s) hold two games: game IDs 401161536, 401161543. Game 401161536 (Golden State 115, Phoenix 99) is dated 2020-03-01 in the archive but was played on 2020-02-29 (confirmed against Basketball-Reference box-score index). The score is correct; only the date is off by one, and it affects nothing but the day on which that 2019-20 result enters the running ratings."
+Team identities,pass,30 distinct team codes: ATL BKN BOS CHA CHI CLE DAL DEN DET GS HOU IND LAC LAL MEM MIA MIL MIN NO NY OKC ORL PHI PHX POR SA SAC TOR UTAH WSH
+30 teams every season,pass,"min 30, max 30"
+Season labels match dates,pass,2018: 2017-10-17..2018-04-11; 2019: 2018-10-16..2019-04-10; 2020: 2019-10-22..2020-08-14; 2021: 2020-12-22..2021-05-16; 2022: 2021-10-19..2022-04-10; 2023: 2022-10-18..2023-04-09; 2024: 2023-10-24..2024-04-14; 2025: 2024-10-22..2025-04-13
+"Cup championship games excluded, other Cup games kept",pass,"both Cup finals absent (2023 In-Season Tournament final (LAL 123, IND 109); 2024 Cup final (MIL 97, OKC 81)); 132 of 132 other Cup games retained, because they do count toward the regular-season standings"
+No All-Star or postseason games in the regular-season table,pass,0 non-regular-season game IDs found in the sheet
+Workbook game table reproduced from the hoopR archive,pass,"9519 games matched; 0 only in the workbook, 0 only in the archive, 0 score differences, 0 date differences, 0 neutral-flag differences"
+2020 bubble games treated as neutral,pass,"88 bubble games, 88 neutral in the model; source flag marked 0 of them neutral"
+Other neutral-site games,info,17 non-bubble neutral games at 7 venues (see audit_neutral_sites.csv)
+Win-loss records match ESPN standings,pass,150 team-seasons checked against a freshly retrieved standings feed; 0 mismatches
+Scoring totals: game log vs standings feed,known issue,"12 of 150 team-seasons differ, by 1-3 points; the workbook reports the same 12"
+Third source (Basketball-Reference) on the 12 scoring gaps,resolved,"12 of 12 team-season totals match the summed game scores exactly, so the ESPN standings aggregate is the outlier and no game score needs correcting"
+Scoring discrepancies traced to individual games,resolved,21 candidate games checked against ESPN box scores; 0 could not be checked
+Regular-season positions 1-15 restored,pass,ranks 1-15 complete in all 10 conference-seasons; 40 positions 7-10 confirmed from opening play-in matchups; 17 team-seasons where the stored ESPN playoff seed differs from the regular-season position
+No future information in the pregame features,pass,"7048 published feature rows; prior-game counts recomputed from the game table: 0 disagreements, 0 rows below the 20-game threshold"

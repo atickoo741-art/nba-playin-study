@@ -1,0 +1,22 @@
+season,scorer,conceder,points,game_id,date,home,away,table_home,table_away,espn_home,espn_away,verdict
+2021,DAL,IND,2,401267377,2021-01-20,IND,DAL,112,124,112,124,box score agrees with the game table
+2021,DAL,IND,2,401307479,2021-03-26,DAL,IND,94,109,94,109,box score agrees with the game table
+2022,MIA,BKN,3,401359881,2021-10-27,BKN,MIA,93,106,93,106,box score agrees with the game table
+2022,MIA,BKN,3,401360670,2022-02-12,MIA,BKN,115,111,115,111,box score agrees with the game table
+2022,MIA,BKN,3,401360760,2022-03-03,BKN,MIA,107,113,107,113,box score agrees with the game table
+2022,MIA,BKN,3,401360930,2022-03-26,MIA,BKN,95,110,95,110,box score agrees with the game table
+2022,MIN,PHX,-2,401360030,2021-11-15,MIN,PHX,96,99,96,99,box score agrees with the game table
+2022,MIN,PHX,-2,401360562,2022-01-28,PHX,MIN,134,124,134,124,box score agrees with the game table
+2022,MIN,PHX,-2,401360909,2022-03-23,MIN,PHX,116,125,116,125,box score agrees with the game table
+2024,BKN,ORL,-1,401584108,2023-11-14,BKN,ORL,124,104,124,104,box score agrees with the game table
+2024,BKN,ORL,-1,401584910,2023-12-02,BKN,ORL,129,101,129,101,box score agrees with the game table
+2024,BKN,ORL,-1,401585461,2024-02-27,ORL,BKN,108,81,108,81,box score agrees with the game table
+2024,BKN,ORL,-1,401585575,2024-03-13,ORL,BKN,114,106,114,106,box score agrees with the game table
+2024,PHI,ATL,2,401584117,2023-11-17,ATL,PHI,116,126,116,126,box score agrees with the game table
+2024,PHI,ATL,2,401616472,2023-12-08,PHI,ATL,125,114,125,114,box score agrees with the game table
+2024,PHI,ATL,2,401585149,2024-01-10,ATL,PHI,139,132,139,132,box score agrees with the game table
+2024,PHI,ATL,2,401585370,2024-02-09,PHI,ATL,121,127,121,127,box score agrees with the game table
+2025,NY,CLE,-1,401704672,2024-10-28,NY,CLE,104,110,104,110,box score agrees with the game table
+2025,NY,CLE,-1,401705363,2025-02-21,CLE,NY,142,105,142,105,box score agrees with the game table
+2025,NY,CLE,-1,401705669,2025-04-02,CLE,NY,124,105,124,105,box score agrees with the game table
+2025,NY,CLE,-1,401705741,2025-04-11,NY,CLE,102,108,102,108,box score agrees with the game table

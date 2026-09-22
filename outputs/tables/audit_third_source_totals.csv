@@ -1,0 +1,13 @@
+season,team,game_log_pf,game_log_pa,espn_standings_pf,espn_standings_pa,bref_pf,bref_pa,verdict
+2021,DAL,8096,7933,8094,7933,8096,7933,third source matches the game log
+2021,IND,8302,8305,8302,8303,8302,8305,third source matches the game log
+2022,BKN,9258,9194,9258,9191,9258,9194,third source matches the game log
+2022,MIA,9022,8657,9019,8657,9022,8657,third source matches the game log
+2022,MIN,9507,9291,9509,9291,9507,9291,third source matches the game log
+2022,PHX,9416,8801,9416,8803,9416,8801,third source matches the game log
+2024,ATL,9703,9882,9703,9880,9703,9882,third source matches the game log
+2024,BKN,9050,9287,9051,9287,9050,9287,third source matches the game log
+2024,ORL,9058,8892,9058,8893,9058,8892,third source matches the game log
+2024,PHI,9397,9147,9395,9147,9397,9147,third source matches the game log
+2025,CLE,9999,9217,9999,9218,9999,9217,third source matches the game log
+2025,NY,9494,9158,9495,9158,9494,9158,third source matches the game log

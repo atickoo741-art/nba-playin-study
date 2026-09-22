@@ -7,3 +7,4 @@ data/external/bref/
 
 # Retrieved on first run and cached; re-downloaded by run_all.py
 data/external/
+.DS_Store

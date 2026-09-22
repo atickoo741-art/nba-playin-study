@@ -307,13 +307,15 @@ Every check and its result: [`outputs/tables/audit_findings.csv`](outputs/tables
 | `src/nbaplayin/` | all analysis code, one module per step |
 | `tests/` | 43 tests |
 | `data/raw/` | the original workbook, unchanged |
-| `data/processed/` | cleaned games, ratings, pregame features |
+| `data/processed/` | computed team ratings and season tallies |
 | `outputs/tables/` | every result table as CSV, plus `results.json` |
 | `outputs/figures/` | seven charts, PNG and SVG |
 | `reports/` | the report in Markdown, HTML and PDF |
-| `logs/` | one log per run |
+| `logs/` | one log per run (git-ignored) |
 
-`data/external/` is git-ignored: `run_all.py` re-downloads and caches it.
+`data/external/` is git-ignored: `run_all.py` re-downloads and caches it. So
+are `logs/` and the two large derived game tables in `data/processed/`, which
+are rebuilt from the workbook on every run rather than redistributed here.
 
 ---
 

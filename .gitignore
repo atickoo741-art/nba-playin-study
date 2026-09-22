@@ -8,3 +8,10 @@ data/external/bref/
 # Retrieved on first run and cached; re-downloaded by run_all.py
 data/external/
 .DS_Store
+
+# Written on every run; paths are machine-specific
+logs/
+
+# Large derived copies of third-party game data; run_all.py regenerates them
+data/processed/regular_season_games.csv
+data/processed/pregame_features.csv
